@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Configuration>
+  <General>
+    <HarmonyPath dnOrder="0" path="C:/microchip/harmony/v2_06"/>
+    <Processor dnOrder="1" name="PIC32MZ2048ECG144"/>
+    <Board dnOrder="2" name=" "/>
+    <ForceOptimization dnOrder="3" flag="true"/>
+    <MergeStrategy dnOrder="4" flag="USER_ALL"/>
+  </General>
+</Configuration>

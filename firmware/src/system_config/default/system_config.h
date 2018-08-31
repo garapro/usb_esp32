@@ -93,7 +93,15 @@ extern "C" {
 #define SYS_CLK_CONFIG_SECONDARY_XTAL       32768ul
    
 /*** Ports System Service Configuration ***/
-#define SYS_PORT_B_ANSEL        0xFDFF
+#define SYS_PORT_A_ANSEL        0x3F23
+#define SYS_PORT_A_TRIS         0xFFFF
+#define SYS_PORT_A_LAT          0x0000
+#define SYS_PORT_A_ODC          0x0000
+#define SYS_PORT_A_CNPU         0x0000
+#define SYS_PORT_A_CNPD         0x0000
+#define SYS_PORT_A_CNEN         0x0000
+
+#define SYS_PORT_B_ANSEL        0xFFFF
 #define SYS_PORT_B_TRIS         0xFFFF
 #define SYS_PORT_B_LAT          0x0000
 #define SYS_PORT_B_ODC          0x0000
@@ -101,7 +109,15 @@ extern "C" {
 #define SYS_PORT_B_CNPD         0x0000
 #define SYS_PORT_B_CNEN         0x0000
 
-#define SYS_PORT_D_ANSEL        0xFFF3
+#define SYS_PORT_C_ANSEL        0xFFFF
+#define SYS_PORT_C_TRIS         0xFFFF
+#define SYS_PORT_C_LAT          0x0000
+#define SYS_PORT_C_ODC          0x0000
+#define SYS_PORT_C_CNPU         0x0000
+#define SYS_PORT_C_CNPD         0x0000
+#define SYS_PORT_C_CNEN         0x0000
+
+#define SYS_PORT_D_ANSEL        0xC100
 #define SYS_PORT_D_TRIS         0xFFFF
 #define SYS_PORT_D_LAT          0x0000
 #define SYS_PORT_D_ODC          0x0000
@@ -109,13 +125,53 @@ extern "C" {
 #define SYS_PORT_D_CNPD         0x0000
 #define SYS_PORT_D_CNEN         0x0000
 
-#define SYS_PORT_H_ANSEL        0xFEFF
+#define SYS_PORT_E_ANSEL        0xFFF0
+#define SYS_PORT_E_TRIS         0xFFFF
+#define SYS_PORT_E_LAT          0x0000
+#define SYS_PORT_E_ODC          0x0000
+#define SYS_PORT_E_CNPU         0x0000
+#define SYS_PORT_E_CNPD         0x0000
+#define SYS_PORT_E_CNEN         0x0000
+
+#define SYS_PORT_F_ANSEL        0xFEC0
+#define SYS_PORT_F_TRIS         0xFFFF
+#define SYS_PORT_F_LAT          0x0000
+#define SYS_PORT_F_ODC          0x0000
+#define SYS_PORT_F_CNPU         0x0000
+#define SYS_PORT_F_CNPD         0x0000
+#define SYS_PORT_F_CNEN         0x0000
+
+#define SYS_PORT_G_ANSEL        0x8FFC
+#define SYS_PORT_G_TRIS         0xFFFF
+#define SYS_PORT_G_LAT          0x0000
+#define SYS_PORT_G_ODC          0x0000
+#define SYS_PORT_G_CNPU         0x0000
+#define SYS_PORT_G_CNPD         0x0000
+#define SYS_PORT_G_CNEN         0x0000
+
+#define SYS_PORT_H_ANSEL        0x0073
 #define SYS_PORT_H_TRIS         0xFFFF
 #define SYS_PORT_H_LAT          0x0000
 #define SYS_PORT_H_ODC          0x0000
 #define SYS_PORT_H_CNPU         0x0000
 #define SYS_PORT_H_CNPD         0x0000
 #define SYS_PORT_H_CNEN         0x0000
+
+#define SYS_PORT_J_ANSEL        0x0B00
+#define SYS_PORT_J_TRIS         0xFFFF
+#define SYS_PORT_J_LAT          0x0000
+#define SYS_PORT_J_ODC          0x0000
+#define SYS_PORT_J_CNPU         0x0000
+#define SYS_PORT_J_CNPD         0x0000
+#define SYS_PORT_J_CNEN         0x0000
+
+#define SYS_PORT_K_ANSEL        0xFF00
+#define SYS_PORT_K_TRIS         0xFFFF
+#define SYS_PORT_K_LAT          0x0000
+#define SYS_PORT_K_ODC          0x0000
+#define SYS_PORT_K_CNPU         0x0000
+#define SYS_PORT_K_CNPD         0x0000
+#define SYS_PORT_K_CNEN         0x0000
 
 
 /*** Interrupt System Service Configuration ***/

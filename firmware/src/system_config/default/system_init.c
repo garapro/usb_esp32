@@ -67,6 +67,11 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #pragma config FECCCON =    OFF_UNLOCKED
 #pragma config FSLEEP =     OFF
 #pragma config DBGPER =     PG_ALL
+#pragma config SMCLR =      MCLR_NORM
+#pragma config SOSCGAIN =   GAIN_LEVEL_3
+#pragma config SOSCBOOST =  ON
+#pragma config POSCGAIN =   GAIN_LEVEL_3
+#pragma config POSCBOOST =  ON
 #pragma config EJTAGBEN =   NORMAL
 #pragma config CP =         OFF
 
@@ -94,7 +99,6 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #pragma config FPLLMULT =   MUL_50
 #pragma config FPLLODIV =   DIV_2
 #pragma config UPLLFSEL =   FREQ_24MHZ
-#pragma config UPLLEN =     ON
 /*** DEVCFG3 ***/
 
 #pragma config USERID =     0xffff

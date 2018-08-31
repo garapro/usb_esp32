@@ -6,7 +6,7 @@
   </DisplayManager>
   <General>
     <HarmonyPath dnOrder="0" path="C:/microchip/harmony/v2_06"/>
-    <Processor dnOrder="1" name="PIC32MZ2048ECG144"/>
+    <Processor dnOrder="1" name="PIC32MZ2048EFG144"/>
     <Board dnOrder="2" name=" "/>
     <ForceOptimization dnOrder="3" flag="true"/>
     <MergeStrategy dnOrder="4" flag="USER_ALL"/>
@@ -266,12 +266,12 @@
       <Template dnOrder="0">
         <Name dnOrder="0">sys_ports_static.c</Name>
         <Path dnOrder="1">Source&amp;#160;Files/app/system_config/default/framework/system/ports/src</Path>
-        <Checksum dnOrder="2">0B43D6AFF0DCAF895843F7A61F22CFAD</Checksum>
+        <Checksum dnOrder="2">1CCF87706B726EE78B93AF0F4506DF46</Checksum>
       </Template>
       <Template dnOrder="1">
         <Name dnOrder="0">system_init.c</Name>
         <Path dnOrder="1">Source&amp;#160;Files/app/system_config/default</Path>
-        <Checksum dnOrder="2">3F43DC7B7E6308721CB3BB91AAD3176A</Checksum>
+        <Checksum dnOrder="2">F650231EA169996E56BD9D2CEC209220</Checksum>
       </Template>
       <Template dnOrder="2">
         <Name dnOrder="0">sys_devcon_cache.h</Name>
@@ -287,6 +287,7 @@
         <Name dnOrder="0">usb_esp32.c</Name>
         <Path dnOrder="1">Source&amp;#160;Files/app</Path>
         <Checksum dnOrder="2">6374EBF11416E6DC3F86EF2DBB0BAE47</Checksum>
+        <ProjectFileChecksum dnOrder="3">3AABD9DB1143200445D34514FC7E767F</ProjectFileChecksum>
       </Template>
       <Template dnOrder="5">
         <Name dnOrder="0">system_definitions.h</Name>
@@ -307,6 +308,7 @@
         <Name dnOrder="0">usb_esp32.h</Name>
         <Path dnOrder="1">Header&amp;#160;Files/app</Path>
         <Checksum dnOrder="2">D0A403CED15315CBD5FDBCFB02512E02</Checksum>
+        <ProjectFileChecksum dnOrder="3">84F97E7E74772EC0143009617F7F39D2</ProjectFileChecksum>
       </Template>
       <Template dnOrder="9">
         <Name dnOrder="0">sys_devcon_local.h</Name>
@@ -336,7 +338,7 @@
       <Template dnOrder="14">
         <Name dnOrder="0">system_config.h</Name>
         <Path dnOrder="1">Header&amp;#160;Files/app/system_config/default</Path>
-        <Checksum dnOrder="2">254056EA25193D9899E75CD996033FCA</Checksum>
+        <Checksum dnOrder="2">8E216329A4F500B31BD20C9875C4A9A9</Checksum>
       </Template>
       <Template dnOrder="15">
         <Name dnOrder="0">system_interrupt.c</Name>
@@ -359,7 +361,7 @@
       </C32>
     </CompilerItems>
     <Libraries dnOrder="3">
-      <Library dnOrder="0" value="C:/microchip/harmony/v2_06/bin/framework/peripheral/PIC32MZ2048ECG144_peripherals.a"/>
+      <Library dnOrder="0" value="C:/microchip/harmony/v2_06/bin/framework/peripheral/PIC32MZ2048EFG144_peripherals.a"/>
     </Libraries>
   </Manifest>
 </Configuration>

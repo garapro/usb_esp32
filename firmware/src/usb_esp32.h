@@ -94,6 +94,20 @@ typedef enum
 
 } USB_ESP32_STATES;
 
+/*** add ***/
+typedef enum
+{
+    ESP32_TO_USB_STATE_INIT=0,
+    ESP32_TO_USB_STATE_SEND,
+} ESP32_TO_USB_STATES;
+
+typedef enum
+{
+    USB_TO_ESP32_STATE_INIT=0,
+    USB_TO_ESP32_STATE_WAIT,
+    USB_TO_ESP32_STATE_SEND,
+} USB_TO_ESP32_STATES;
+/*** add ***/
 
 // *****************************************************************************
 /* Application Data
@@ -145,6 +159,11 @@ typedef struct
     /* Length of data to be written */
     uint32_t writeLen;
 
+    /*** add ***/
+    ESP32_TO_USB_STATES esp32_to_usb_State;
+    USB_TO_ESP32_STATES usb_to_esp32_State;
+    DRV_HANDLE handleUSART0;
+    /*** add ***/
 } USB_ESP32_DATA;
 
 

@@ -77,6 +77,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 */
 
 USB_ESP32_DATA usb_esp32Data;
+
 /* Static buffers, suitable for DMA transfer */
 #define USB_ESP32_MAKE_BUFFER_DMA_READY  __attribute__((coherent)) __attribute__((aligned(16)))
 
@@ -85,12 +86,169 @@ static uint8_t writeString[] = "Hello World\r\n";
 static uint8_t USB_ESP32_MAKE_BUFFER_DMA_READY readBuffer [USB_ESP32_USB_CDC_COM_PORT_SINGLE_READ_BUFFER_SIZE];
 static uint8_t readString[8];
 
+/*** add ***/
+static uint16_t readBufferSize;
+static uint16_t writeBufferSize;
+static uint8_t sendBuffer[USB_ESP32_USB_CDC_COM_PORT_SINGLE_READ_BUFFER_SIZE];
+static uint16_t sendBufferIdx;
+static uint16_t sendBufferSize;
+static uint8_t recvBuffer[USB_ESP32_USB_CDC_COM_PORT_SINGLE_WRITE_BUFFER_SIZE];
+static uint16_t recvBufferSize;
+/*** add ***/
+
 // *****************************************************************************
 // *****************************************************************************
 // Section: Application Callback Functions
 // *****************************************************************************
 // *****************************************************************************
+/*** add ***/
+static void USB_TX_Task (void);
+static void USB_RX_Task (void);
+USB_DEVICE_CDC_EVENT_RESPONSE USB_ESP32_USBDeviceCDCEventHandler
+(
+    USB_DEVICE_CDC_INDEX index ,
+    USB_DEVICE_CDC_EVENT event ,
+    void * pData,
+    uintptr_t userData
+);
+void USB_ESP32_USBDeviceEventHandler ( USB_DEVICE_EVENT event, void * eventData, uintptr_t context );
 
+static void send(void);
+static void callbackSend(const SYS_MODULE_INDEX index);
+static void callbackRecv(const SYS_MODULE_INDEX index);
+/*** add ***/
+
+// *****************************************************************************
+// *****************************************************************************
+// Section: Application Initialization and State Machine Functions
+// *****************************************************************************
+// *****************************************************************************
+
+/*******************************************************************************
+  Function:
+    void USB_ESP32_Initialize ( void )
+
+  Remarks:
+    See prototype in usb_esp32.h.
+ */
+
+void USB_ESP32_Initialize ( void )
+{
+    /* Place the App state machine in its initial state. */
+    usb_esp32Data.state = USB_ESP32_STATE_INIT;
+
+
+    /* Device Layer Handle  */
+    usb_esp32Data.deviceHandle = USB_DEVICE_HANDLE_INVALID ;
+
+    /* Device configured status */
+    usb_esp32Data.isConfigured = false;
+
+    /* Initial get line coding state */
+    usb_esp32Data.getLineCodingData.dwDTERate   = 9600;
+    usb_esp32Data.getLineCodingData.bParityType =  0;
+    usb_esp32Data.getLineCodingData.bParityType = 0;
+    usb_esp32Data.getLineCodingData.bDataBits   = 8;
+
+    /* Read Transfer Handle */
+    usb_esp32Data.readTransferHandle = USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID;
+
+    /* Intialize the read data */
+    usb_esp32Data.readProcessedLen = 0;
+
+    /* Write Transfer Handle */
+    usb_esp32Data.writeTransferHandle = USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID;
+    
+    /*Initialize the write data */
+    usb_esp32Data.writeLen = sizeof(writeString);
+	memcpy(writeBuffer, writeString, usb_esp32Data.writeLen);
+    
+    /* TODO: Initialize your application's state machine and other
+     * parameters.
+     */
+    /*** add ***/
+    usb_esp32Data.esp32_to_usb_State = ESP32_TO_USB_STATE_INIT;
+    usb_esp32Data.usb_to_esp32_State = USB_TO_ESP32_STATE_INIT;
+    usb_esp32Data.handleUSART0 = DRV_HANDLE_INVALID;
+    readBufferSize = 0;
+    
+    memset(sendBuffer, 0x00, sizeof(sendBuffer));
+    memset(recvBuffer, 0x00, sizeof(recvBuffer));
+    
+    
+    /*** add ***/
+}
+
+
+/******************************************************************************
+  Function:
+    void USB_ESP32_Tasks ( void )
+
+  Remarks:
+    See prototype in usb_esp32.h.
+ */
+
+void USB_ESP32_Tasks ( void )
+{
+
+    /* Check the application's current state. */
+    switch ( usb_esp32Data.state )
+    {
+        /* Application's initial state. */
+        case USB_ESP32_STATE_INIT:
+        {
+            bool appInitialized = true;
+       
+
+            /* Open the device layer */
+            if (usb_esp32Data.deviceHandle == USB_DEVICE_HANDLE_INVALID)
+            {
+                usb_esp32Data.deviceHandle = USB_DEVICE_Open( USB_DEVICE_INDEX_0,
+                                               DRV_IO_INTENT_READWRITE );
+                appInitialized &= ( USB_DEVICE_HANDLE_INVALID != usb_esp32Data.deviceHandle );
+            }
+                
+            /*** add ***/
+            DRV_USART_ByteTransmitCallbackSet(USB_DEVICE_INDEX_0, callbackSend);
+            DRV_USART_ByteReceiveCallbackSet(USB_DEVICE_INDEX_0, callbackRecv);
+            if (usb_esp32Data.handleUSART0 == DRV_HANDLE_INVALID)
+            {
+                usb_esp32Data.handleUSART0 = DRV_USART_Open(DRV_USART_INDEX_0, DRV_IO_INTENT_READWRITE|DRV_IO_INTENT_NONBLOCKING);
+                appInitialized &= (DRV_HANDLE_INVALID != usb_esp32Data.handleUSART0);
+            }
+            /*** add ***/
+        
+            if (appInitialized)
+            {
+
+                /* Register a callback with device layer to get event notification (for end point 0) */
+                USB_DEVICE_EventHandlerSet(usb_esp32Data.deviceHandle,
+                                           USB_ESP32_USBDeviceEventHandler, 0);
+            
+                usb_esp32Data.state = USB_ESP32_STATE_SERVICE_TASKS;
+            }
+            break;
+        }
+
+        case USB_ESP32_STATE_SERVICE_TASKS:
+        {
+            USB_RX_Task();
+            USB_TX_Task();
+        
+            break;
+        }
+
+        /* TODO: implement your application state machine.*/
+        
+
+        /* The default state should never be executed. */
+        default:
+        {
+            /* TODO: Handle error in application's state machine. */
+            break;
+        }
+    }
+}
 
 /*******************************************************
  * USB CDC Device Events - Application Event Handler
@@ -156,12 +314,15 @@ USB_DEVICE_CDC_EVENT_RESPONSE USB_ESP32_USBDeviceCDCEventHandler
 
         case USB_DEVICE_CDC_EVENT_READ_COMPLETE:
             /* This means that the host has sent some data*/
-            appDataObject->readTransferHandle = USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID;
-			readString[appDataObject->readProcessedLen] = readBuffer[0];
-			if (appDataObject->readProcessedLen < 8)
-			{
-            	appDataObject->readProcessedLen++;
-			}
+            /*** add ***/
+            //appDataObject->readTransferHandle = USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID;
+			//readString[appDataObject->readProcessedLen] = readBuffer[0];
+			//if (appDataObject->readProcessedLen < 8)
+			//{
+            //	appDataObject->readProcessedLen++;
+			//}
+            usb_esp32Data.usb_to_esp32_State = USB_TO_ESP32_STATE_SEND;
+            /*** add ***/
             break;
 
         case USB_DEVICE_CDC_EVENT_CONTROL_TRANSFER_DATA_RECEIVED:
@@ -182,6 +343,9 @@ USB_DEVICE_CDC_EVENT_RESPONSE USB_ESP32_USBDeviceCDCEventHandler
 
             /* This means that the host has sent some data*/
             appDataObject->writeTransferHandle = USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID;
+            /*** add ***/
+            usb_esp32Data.esp32_to_usb_State = ESP32_TO_USB_STATE_INIT;
+            /*** add ***/
             break;
 
         default:
@@ -275,14 +439,36 @@ static void USB_TX_Task (void)
     {
         /* Schedule a write if data is pending 
          */
-        if ((usb_esp32Data.writeLen > 0)/* && (usb_esp32Data.writeTransferHandle == USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID)*/)
-        {
-            USB_DEVICE_CDC_Write(USB_DEVICE_CDC_INDEX_0,
-                                 &usb_esp32Data.writeTransferHandle,
-                                 writeBuffer, 
-                                 usb_esp32Data.writeLen,
-                                 USB_DEVICE_CDC_TRANSFER_FLAGS_DATA_COMPLETE);
+        /*** add ***/
+        //if ((usb_esp32Data.writeLen > 0)/* && (usb_esp32Data.writeTransferHandle == USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID)*/)
+        //{
+        //    USB_DEVICE_CDC_Write(USB_DEVICE_CDC_INDEX_0,
+        //                         &usb_esp32Data.writeTransferHandle,
+        //                         writeBuffer, 
+        //                         usb_esp32Data.writeLen,
+        //                         USB_DEVICE_CDC_TRANSFER_FLAGS_DATA_COMPLETE);
+        //}
+        switch(usb_esp32Data.esp32_to_usb_State){
+            case ESP32_TO_USB_STATE_INIT:
+            {
+                if( recvBufferSize > 0 ){
+                    SYS_INT_Disable();
+                    memcpy(writeBuffer, recvBuffer, recvBufferSize);
+                    writeBufferSize = recvBufferSize;
+                    recvBufferSize = 0;
+                    SYS_INT_Enable();
+                    usb_esp32Data.esp32_to_usb_State = ESP32_TO_USB_STATE_SEND;
+                    
+                    USB_DEVICE_CDC_Write(USB_DEVICE_CDC_INDEX_0,
+                        &usb_esp32Data.writeTransferHandle,
+                        writeBuffer, 
+                        writeBufferSize,
+                        USB_DEVICE_CDC_TRANSFER_FLAGS_DATA_COMPLETE);
+                }
+                break;
+            }
         }
+        /*** add ***/
     }
 }
 
@@ -305,130 +491,79 @@ static void USB_RX_Task(void)
         /* Schedule a read if none is pending and all previously read data
            has been processed
          */
-        if((usb_esp32Data.readProcessedLen < 8) && (usb_esp32Data.readTransferHandle  == USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID))
-        {
-            USB_DEVICE_CDC_Read (USB_DEVICE_CDC_INDEX_0,
+        /*** add ***/
+        //if((usb_esp32Data.readProcessedLen < 8) && (usb_esp32Data.readTransferHandle  == USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID))
+        //{
+        //    USB_DEVICE_CDC_Read (USB_DEVICE_CDC_INDEX_0,
+        //                         &usb_esp32Data.readTransferHandle, 
+        //                         readBuffer,
+        //                         USB_ESP32_USB_CDC_COM_PORT_SINGLE_READ_BUFFER_SIZE);
+        //};
+        switch(usb_esp32Data.usb_to_esp32_State){
+            case USB_TO_ESP32_STATE_INIT:
+            {
+                memset(readBuffer, 0x00, sizeof(readBuffer));
+                USB_DEVICE_CDC_Read (USB_DEVICE_CDC_INDEX_0,
                                  &usb_esp32Data.readTransferHandle, 
                                  readBuffer,
                                  USB_ESP32_USB_CDC_COM_PORT_SINGLE_READ_BUFFER_SIZE);
-        };
+                usb_esp32Data.usb_to_esp32_State = USB_TO_ESP32_STATE_WAIT;
+                break;
+            }
+            case USB_TO_ESP32_STATE_SEND:
+            {
+                strcpy(sendBuffer, readBuffer);
+                sendBufferSize = strlen(readBuffer);
+                
+                usb_esp32Data.usb_to_esp32_State = USB_TO_ESP32_STATE_WAIT;
+                
+                sendBufferIdx = 0;
+                send();
+                break;
+            }
+            default:
+                break;
+        }
+        /*** add ***/
     }
 }
 
 /* TODO:  Add any necessary local functions.
 */
 
-
-// *****************************************************************************
-// *****************************************************************************
-// Section: Application Initialization and State Machine Functions
-// *****************************************************************************
-// *****************************************************************************
-
-/*******************************************************************************
-  Function:
-    void USB_ESP32_Initialize ( void )
-
-  Remarks:
-    See prototype in usb_esp32.h.
- */
-
-void USB_ESP32_Initialize ( void )
-{
-    /* Place the App state machine in its initial state. */
-    usb_esp32Data.state = USB_ESP32_STATE_INIT;
-
-
-    /* Device Layer Handle  */
-    usb_esp32Data.deviceHandle = USB_DEVICE_HANDLE_INVALID ;
-
-    /* Device configured status */
-    usb_esp32Data.isConfigured = false;
-
-    /* Initial get line coding state */
-    usb_esp32Data.getLineCodingData.dwDTERate   = 9600;
-    usb_esp32Data.getLineCodingData.bParityType =  0;
-    usb_esp32Data.getLineCodingData.bParityType = 0;
-    usb_esp32Data.getLineCodingData.bDataBits   = 8;
-
-    /* Read Transfer Handle */
-    usb_esp32Data.readTransferHandle = USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID;
-
-    /* Intialize the read data */
-    usb_esp32Data.readProcessedLen = 0;
-
-    /* Write Transfer Handle */
-    usb_esp32Data.writeTransferHandle = USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID;
-    
-    /*Initialize the write data */
-    usb_esp32Data.writeLen = sizeof(writeString);
-	memcpy(writeBuffer, writeString, usb_esp32Data.writeLen);
-    
-    /* TODO: Initialize your application's state machine and other
-     * parameters.
-     */
+/*** add ***/
+static void send(void){
+    if( sendBufferIdx >= sendBufferSize){
+        usb_esp32Data.readTransferHandle = USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID;
+        usb_esp32Data.usb_to_esp32_State = USB_TO_ESP32_STATE_INIT;
+    }else{
+        DRV_USART_WriteByte( usb_esp32Data.handleUSART0, sendBuffer[sendBufferIdx] );
+    }
+    return;
 }
 
+static void callbackSend(const SYS_MODULE_INDEX index){
+    sendBufferIdx++;
+    send();
+    return;
+}
 
-/******************************************************************************
-  Function:
-    void USB_ESP32_Tasks ( void )
+static void callbackRecv(const SYS_MODULE_INDEX index){
+    uint8_t bData;
 
-  Remarks:
-    See prototype in usb_esp32.h.
- */
-
-void USB_ESP32_Tasks ( void )
-{
-
-    /* Check the application's current state. */
-    switch ( usb_esp32Data.state )
-    {
-        /* Application's initial state. */
-        case USB_ESP32_STATE_INIT:
-        {
-            bool appInitialized = true;
-       
-
-            /* Open the device layer */
-            if (usb_esp32Data.deviceHandle == USB_DEVICE_HANDLE_INVALID)
-            {
-                usb_esp32Data.deviceHandle = USB_DEVICE_Open( USB_DEVICE_INDEX_0,
-                                               DRV_IO_INTENT_READWRITE );
-                appInitialized &= ( USB_DEVICE_HANDLE_INVALID != usb_esp32Data.deviceHandle );
-            }
+    if (!DRV_USART_ReceiverBufferIsEmpty(usb_esp32Data.handleUSART0)) {
+        bData = DRV_USART_ReadByte(usb_esp32Data.handleUSART0);
         
-            if (appInitialized)
-            {
-
-                /* Register a callback with device layer to get event notification (for end point 0) */
-                USB_DEVICE_EventHandlerSet(usb_esp32Data.deviceHandle,
-                                           USB_ESP32_USBDeviceEventHandler, 0);
-            
-                usb_esp32Data.state = USB_ESP32_STATE_SERVICE_TASKS;
-            }
-            break;
-        }
-
-        case USB_ESP32_STATE_SERVICE_TASKS:
-        {
-            USB_RX_Task();
-            USB_TX_Task();
-        
-            break;
-        }
-
-        /* TODO: implement your application state machine.*/
-        
-
-        /* The default state should never be executed. */
-        default:
-        {
-            /* TODO: Handle error in application's state machine. */
-            break;
+        recvBuffer[readBufferSize] = bData;
+        recvBufferSize++;
+        if( recvBufferSize >= sizeof(recvBuffer)){
+            recvBufferSize = 0;
         }
     }
+    return;
 }
+
+/*** add ***/
 
  
 
